@@ -25,6 +25,9 @@
 /* Soundfont to load automatically in some use cases */
 #cmakedefine DEFAULT_SOUNDFONT "@DEFAULT_SOUNDFONT@"
 
+/* Define to enable dsound driver */
+#cmakedefine DSOUND_SUPPORT @DSOUND_SUPPORT@
+
 /* Define to enable FPE checks */
 #cmakedefine FPE_CHECK @FPE_CHECK@
 
@@ -192,6 +195,9 @@
 
 /* Version number of package */
 #cmakedefine VERSION @FLUIDSYNTH_VERSION@
+
+/* Define to enable WinMidi driver */
+#cmakedefine WINMIDI_SUPPORT @WINMIDI_SUPPORT@
 
 /* Define to do all DSP in single floating point precision */
 #cmakedefine WITH_FLOAT @WITH_FLOAT@

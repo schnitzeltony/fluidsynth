@@ -76,8 +76,16 @@ if ( PORTAUDIO_SUPPORT )
 endif ( PORTAUDIO_SUPPORT )
 
 if ( WINDOWS_SUPPORT )
-  set ( fluid_windows_SOURCES fluid_dll.c drivers/fluid_dsound.c drivers/fluid_winmidi.c )
+  set ( fluid_windows_SOURCES fluid_dll.c )
 endif ( WINDOWS_SUPPORT )
+
+if ( DSOUND_SUPPORT )
+  set ( fluid_windows_SOURCES "${fluid_windows_SOURCES} drivers/fluid_dsound.c" )
+endif ( DSOUND_SUPPORT )
+
+if ( WINMIDI_SUPPORT )
+  set ( fluid_windows_SOURCES "${fluid_windows_SOURCES} drivers/fluid_winmidi.c" )
+endif ( WINMIDI_SUPPORT )
 
 if ( OSS_SUPPORT )
   set ( fluid_oss_SOURCES drivers/fluid_oss.c )

@@ -139,8 +139,6 @@ typedef guint64  uint64_t;
 /* MinGW32 special defines */
 #ifdef MINGW32
 
-#define DSOUND_SUPPORT 1
-#define WINMIDI_SUPPORT 1
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
