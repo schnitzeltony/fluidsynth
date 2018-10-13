@@ -27,6 +27,9 @@
 #include "fluid_ladspa.h"
 #include "fluid_synth.h"
 
+#if defined(__ARM_NEON__)
+#include "arm_neon.h"
+#endif
 
 // If less than x voices, the thread overhead is larger than the gain,
 // so don't activate the thread(s).
@@ -1053,9 +1056,15 @@ fluid_mixer_buffers_mix(fluid_mixer_buffers_t *dst, fluid_mixer_buffers_t *src, 
     int i, j;
     int scount = current_blockcount * FLUID_BUFSIZE;
     int minbuf;
+#if defined(__ARM_NEON__) && defined(WITH_FLOAT)
+    fluid_real_t *FLUID_RESTRICT base_src_left;
+    fluid_real_t *FLUID_RESTRICT base_src_right;
+    fluid_real_t *FLUID_RESTRICT base_dst_left;
+    fluid_real_t *FLUID_RESTRICT base_dst_right;
+#else
     fluid_real_t *FLUID_RESTRICT base_src;
     fluid_real_t *FLUID_RESTRICT base_dst;
-
+#endif
     minbuf = dst->buf_count;
 
     if(minbuf > src->buf_count)
@@ -1063,6 +1072,27 @@ fluid_mixer_buffers_mix(fluid_mixer_buffers_t *dst, fluid_mixer_buffers_t *src, 
         minbuf = src->buf_count;
     }
 
+#if defined(__ARM_NEON__) && defined(WITH_FLOAT)
+    base_src_left = fluid_align_ptr(src->left_buf, FLUID_DEFAULT_ALIGNMENT);
+    base_dst_left = fluid_align_ptr(dst->left_buf, FLUID_DEFAULT_ALIGNMENT);
+    base_src_right = fluid_align_ptr(src->right_buf, FLUID_DEFAULT_ALIGNMENT);
+    base_dst_right = fluid_align_ptr(dst->right_buf, FLUID_DEFAULT_ALIGNMENT);
+
+    for(i = 0; i < minbuf; i++)
+    {
+        for(j = 0; j < scount; j+=4)
+        {
+            int dsp_i = i * FLUID_MIXER_MAX_BUFFERS_DEFAULT * FLUID_BUFSIZE + j;
+
+            float32x4_t vleft = vld1q_f32(&base_dst_left[dsp_i]);
+            float32x4_t vright = vld1q_f32(&base_dst_right[dsp_i]);
+            vleft = vaddq_f32(vleft, vld1q_f32(&base_src_left[dsp_i]));
+            vright = vaddq_f32(vright, vld1q_f32(&base_src_right[dsp_i]));
+            vst1q_f32(&base_dst_left[dsp_i], vleft);
+            vst1q_f32(&base_dst_right[dsp_i], vright);
+        }
+    }
+#else
     base_src = fluid_align_ptr(src->left_buf, FLUID_DEFAULT_ALIGNMENT);
     base_dst = fluid_align_ptr(dst->left_buf, FLUID_DEFAULT_ALIGNMENT);
 
@@ -1090,6 +1120,7 @@ fluid_mixer_buffers_mix(fluid_mixer_buffers_t *dst, fluid_mixer_buffers_t *src, 
             base_dst[dsp_i] += base_src[dsp_i];
         }
     }
+#endif
 
     minbuf = dst->fx_buf_count;
 
@@ -1098,6 +1129,27 @@ fluid_mixer_buffers_mix(fluid_mixer_buffers_t *dst, fluid_mixer_buffers_t *src, 
         minbuf = src->fx_buf_count;
     }
 
+#if defined(__ARM_NEON__) && defined(WITH_FLOAT)
+    base_src_left = fluid_align_ptr(src->fx_left_buf, FLUID_DEFAULT_ALIGNMENT);
+    base_dst_left = fluid_align_ptr(dst->fx_left_buf, FLUID_DEFAULT_ALIGNMENT);
+    base_src_right = fluid_align_ptr(src->fx_right_buf, FLUID_DEFAULT_ALIGNMENT);
+    base_dst_right = fluid_align_ptr(dst->fx_right_buf, FLUID_DEFAULT_ALIGNMENT);
+
+    for(i = 0; i < minbuf; i++)
+    {
+        for(j = 0; j < scount; j+=4)
+        {
+            int dsp_i = i * FLUID_MIXER_MAX_BUFFERS_DEFAULT * FLUID_BUFSIZE + j;
+
+            float32x4_t vleft = vld1q_f32(&base_dst_left[dsp_i]);
+            float32x4_t vright = vld1q_f32(&base_dst_right[dsp_i]);
+            vleft = vaddq_f32(vleft, vld1q_f32(&base_src_left[dsp_i]));
+            vright = vaddq_f32(vright, vld1q_f32(&base_src_right[dsp_i]));
+            vst1q_f32(&base_dst_left[dsp_i], vleft);
+            vst1q_f32(&base_dst_right[dsp_i], vright);
+        }
+    }
+#else
     base_src = fluid_align_ptr(src->fx_left_buf, FLUID_DEFAULT_ALIGNMENT);
     base_dst = fluid_align_ptr(dst->fx_left_buf, FLUID_DEFAULT_ALIGNMENT);
 
@@ -1125,6 +1177,7 @@ fluid_mixer_buffers_mix(fluid_mixer_buffers_t *dst, fluid_mixer_buffers_t *src, 
             base_dst[dsp_i] += base_src[dsp_i];
         }
     }
+#endif
 }
 
 
